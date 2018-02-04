@@ -65,6 +65,7 @@ namespace UtilitiesCollection
 
             //str_TextBoxBody = "";
             listBox1.Items.Clear();
+            textBox1.Text = "";
 
             XmlDocument doc = new XmlDocument();
             try
@@ -92,14 +93,16 @@ namespace UtilitiesCollection
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-
+            string testName;
+            string failureVerbose;
+            XElement test;
 
             string selectedItemText = listBox1.SelectedItem.ToString();
             if (selectedItemText.Contains("Failure"))
             {
-                string testName = selectedItemText.Split(';')[0];
+                testName = selectedItemText.Split(';')[0];
 
-                XElement test = XElement.Load(str_FileName);
+                test = XElement.Load(str_FileName);
                 var query = from param in test.Descendants("testcase")
                             where ((string)param.Attribute("name")).Contains(testName)
                             select new
@@ -110,12 +113,37 @@ namespace UtilitiesCollection
                             };
                 foreach (var item in query)
                 {
-                    textBox1.Text = item.failureShort + Environment.NewLine + Environment.NewLine + item.failureVerbose;
+                    failureVerbose = item.failureVerbose.Replace(".r)",".r)" + Environment.NewLine);
+                    failureVerbose = failureVerbose.Replace(".cls)",".cls)" + Environment.NewLine);
+                    textBox1.Text = item.failureShort + Environment.NewLine + Environment.NewLine + failureVerbose;
+                    failureVerbose = "";
                 }
             }
             else
             {
-                textBox1.Text = "";
+                if (selectedItemText.Contains("Error"))
+                {
+                    testName = selectedItemText.Split(';')[0];
+
+                    test = XElement.Load(str_FileName);
+                    var query2 = from param in test.Descendants("testcase")
+                                where ((string)param.Attribute("name")).Contains(testName)
+                                select new
+                                {
+                                    failureVerbose = (string)param.Element("error")
+                                };
+                    foreach (var item in query2)
+                    {
+                        failureVerbose = item.failureVerbose.Replace(".r)",".r)" + Environment.NewLine);
+                        failureVerbose = failureVerbose.Replace(".cls)",".cls)" + Environment.NewLine);
+                        textBox1.Text = failureVerbose;
+                        failureVerbose = "";
+                    }
+                }
+                else
+                    {
+                    textBox1.Text = "";
+}
             }
         }
 
@@ -134,8 +162,19 @@ namespace UtilitiesCollection
             //
             if (listBox1.Items[e.Index].ToString().Contains("Failure"))
             {
-                myBrush = Brushes.Red;
+                myBrush = Brushes.Blue;
             }
+            else
+            { 
+                if(listBox1.Items[e.Index].ToString().Contains("Error"))
+                {
+                    myBrush = Brushes.Red;
+                }
+                else 
+                {
+                    myBrush = Brushes.Green;
+                }
+            }           
             //
             // Draw the current item text based on the current 
             // Font and the custom brush settings.
@@ -164,6 +203,7 @@ namespace UtilitiesCollection
                 watcher.Path = Path.GetDirectoryName(str_FileName);
                 watcher.Filter = Path.GetFileName(str_FileName);
                 watcher.EnableRaisingEvents = true;
+                PerformOperation();
             }
         }
 
@@ -173,6 +213,7 @@ namespace UtilitiesCollection
             watcher.Path = Path.GetDirectoryName(str_FileName);
             watcher.Filter = Path.GetFileName(str_FileName);
             watcher.EnableRaisingEvents = true;
+            PerformOperation();
         }
     }
 }
